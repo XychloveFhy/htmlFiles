@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<meta charset="UTF-8">
+<html>
+  <head>
+    <style>
+      input {
+        padding: 10px;
+        /* margin-bottom: 20px; */
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        /* width: 300px; */
+        font-size: 16px;
+      }
+      button {
+        padding: 10px 20px;
+        background-color: #007bff;
+        border: none;
+        color: #fff;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: all 0.3s ease;
+      }
+      table,
+      table td,
+      table th {
+        border: 1px solid #ccc;
+      }
+      table th:last-child,
+      table td:last-child {
+        border-left: none;
+      }
+      table th:nth-last-child(2),
+      table td:nth-last-child(2) {
+        border-right: none;
+      }
+      .form {
+        width: 400px;
+        margin: 0 auto;
+        padding: 10px 40px 40px;
+        border: 1px solid #ccc;
+      }
+      .form .form-item {
+        display: flex;
+      }
+      .form .form-item + .form-item {
+        margin-top: 20px;
+      }
+      .form .form-item label {
+        display: inline-block;
+        width: 80px;
+        line-height: 40px;
+        margin-right: 12px;
+        text-align: right;
+      }
+      .form .form-item input {
+        flex: 1;
+      }
+      #myTable {
+        width: 100%;
+        margin-top: 40px;
+        border-collapse: collapse;
+        /* border: 1px solid #ccc; Added border to the table */
+      }
+
+      #myTable th,
+      #myTable td {
+        text-align: left;
+        padding: 8px;
+      }
+
+      #myTable tr:nth-child(even) {
+        background-color: #f2f2f2;
+      }
+
+      #myTable th {
+        cursor: pointer;
+      }
+
+      #myTable th.asc:after {
+        content: " \25B2";
+        /* ' ▲'; */
+      }
+
+      #myTable th.desc:after {
+        content: " \25BC";
+        /* ' ▼'; */
+      }
+
+      #myTable td button {
+        display: none;
+      }
+
+      #myTable tr:hover td button {
+        display: inline-block;
+      }
+
+      #myTable .table-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      #myTable .table-header .table-header-title {
+        font-size: 24px;
+      }
+      #myTable .no-records-row td {
+        text-align: center;
+        color: #999;
+      }
+      #myTable .table-cell-date {
+        display: flex;
+        justify-content: space-between;
+      }
+      #myTable #tableBody tr td {
+        line-height: 40px;
+      }
+      #myTable .delete-btn-cell {
+        text-align: right;
+      }
+    </style>
+  </head>
+  <body>
+    <form class="form" onsubmit="handleSubmit(event)">
+      <h2>Add User</h2>
+      <div class="form-item">
+        <label for="email">Email:</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          placeholder="Enter email address"
+          pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"
+          required
+        />
+      </div>
+      <div class="form-item">
+        <label for="zip">Zip Code:</label>
+        <input
+          type="text"
+          id="zip"
+          name="zip"
+          placeholder="Enter US zip code"
+          required
+        />
+      </div>
+      <div class="form-item">
+        <label></label>
+        <button type="submit" id="submit-btn">Submit</button>
+      </div>
+    </form>
+
+    <table id="myTable">
+      <thead>
+        <tr>
+          <th colspan="5">
+            <div class="table-header">
+              <div class="table-header-title">List of User</div>
+              <input
+                type="text"
+                id="myInput"
+                onkeyup="filterTable()"
+                placeholder="Search for email.."
+              />
+            </div>
+          </th>
+        </tr>
+        <tr id="tableTitle">
+          <th width="25%" data-field="email" onclick="sortTable('email')">
+            Email
+          </th>
+          <th width="20%" data-field="zip" onclick="sortTable('zip')">
+            Us Zip Code
+          </th>
+          <th width="20%" data-field="city" onclick="sortTable('city')">
+            City
+          </th>
+          <th width="20%" data-field="created" onclick="sortTable('created')">
+            Created DateTime
+          </th>
+          <th width="15%"></th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <tr id="noRecordsRow" class="no-records-row">
+          <td colspan="5">No Records Found</td>
+        </tr>
+      </tbody>
+    </table>
+  </body>
+</html>
+<script>
+  const emailInput = document.getElementById("email");
+  const zipInput = document.getElementById("zip");
+  // const submitBtn = document.getElementById("submit-btn");
+  const tableBody = document.getElementById("tableBody");
+  const noRecordsRow = document.getElementById("noRecordsRow");
+  const headers = document
+    .getElementById("tableTitle")
+    .getElementsByTagName("th");
+  let rows = [];
+  let sortField = "";
+  let sortDesc = false;
+
+  function sortTable(field) {
+    if (sortField === field) {
+      sortDesc = !sortDesc;
+    } else {
+      sortField = field;
+      sortDesc = false;
+    }
+    rows.sort((a, b) => {
+      if (sortDesc) {
+        return b[sortField].localeCompare(a[sortField]);
+      }
+      return a[sortField].localeCompare(b[sortField]);
+    });
+    renderTable(rows);
+    Array.from(headers).forEach((header) => {
+      header.classList.remove("asc", "desc");
+      if (header.dataset.field === sortField) {
+        header.classList.add(sortDesc ? "desc" : "asc");
+      }
+    });
+  }
+
+  function filterTable() {
+    const input = document.getElementById("myInput");
+    const filter = input.value.toUpperCase();
+    const filterRows = rows.filter((row) =>
+      row.email.toUpperCase().includes(filter)
+    );
+    renderTable(filterRows);
+  }
+
+  function deleteRow(email) {
+    const index = rows.findIndex((row) => row.email === email);
+    rows.splice(index, 1);
+    renderTable(rows);
+  }
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    const email = emailInput.value;
+    const zip = zipInput.value;
+
+    // Validate email format
+    // const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // if (!emailRegex.test(email)) {
+    //   alert("Invalid email format");
+    //   return;
+    // }
+    if (rows.some((row) => row.email.toUpperCase() === email.toUpperCase())) {
+      alert("Email already exists");
+      return;
+    }
+    
+    // Validate zip code
+    fetch(`http://api.zippopotam.us/us/${zip}`)
+      .then((response) => response.json())
+      .then((data) => {
+        if (!data.places || data.places.length === 0) {
+          alert("Invalid zip code");
+          return;
+        }
+        const city = data.places[0]["place name"];
+        const created = new Date().toLocaleString();
+        Array.from(headers).forEach((header) => {
+          header.classList.remove("asc", "desc");
+        });
+        rows.sort((a, b) => {
+          return a["created"].localeCompare(b["created"]);
+        });
+        rows.push({
+          email,
+          zip,
+          city,
+          created,
+        });
+        renderTable(rows);
+      })
+      .catch((error) => {
+        console.log(error);
+        alert("Error validating zip code");
+      });
+  }
+
+  function renderTable(filteredData) {
+    tableBody.innerHTML = "";
+
+    const dataToRender = filteredData || data;
+
+    dataToRender.forEach((row) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+                    <td>${row.email}</td>
+                    <td>${row.zip}</td>
+                    <td>${row.city}</td>
+                    <td>${row.created}</td>
+                    <td><div class="delete-btn-cell"><button class="delete-btn" onclick="deleteRow('${row.email}')">Delete</button></div></td>
+                `;
+      tableBody.appendChild(tr);
+    });
+    if (!filteredData.length) {
+      const tr = document.createElement("tr");
+      tr.classList.add("no-records-row");
+      tr.innerHTML = `<td colspan="5">No Records Found</td>`;
+      tableBody.appendChild(tr);
+    }
+  }
+</script>
